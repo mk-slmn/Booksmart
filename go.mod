@@ -1,4 +1,4 @@
-module github.com/mk-slmn/Booksmart
+module github.com/mk-slmn/booksmart
 
 go 1.25.1
 
