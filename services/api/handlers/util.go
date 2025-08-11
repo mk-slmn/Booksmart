@@ -44,7 +44,7 @@ func parseRFC3339UTC(s string) (time.Time, error) {
 
 func timeOrNowRFC3339(t *time.Time) string {
 	if t == nil {
-		return time.Now().Format(time.RFC3339)
+		return time.Now().UTC().Format(time.RFC3339)
 	}
 	return t.UTC().Format(time.RFC3339)
 }
