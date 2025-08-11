@@ -10,8 +10,10 @@ func NewServer() *chi.Mux {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
 
 	r.Get("/v1/health", Health)
+	r.Get("/v1/version", Version)
 
 	return r
 }
