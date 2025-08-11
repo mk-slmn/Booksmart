@@ -16,7 +16,7 @@ type versionResponse struct {
 	Version string `json:"version"`
 }
 
-func Version(w http.ResponseWriter, r *http.Request) {
+func (a *App) version(w http.ResponseWriter, r *http.Request) {
 	name := appName
 	version := appVersion
 

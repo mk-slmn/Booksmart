@@ -9,7 +9,13 @@ import (
 )
 
 func main() {
-	r := handlers.NewServer()
+	db, err := handlers.OpenDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	r := handlers.NewServer(db)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -18,6 +24,6 @@ func main() {
 
 	log.Printf("listening on :%s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatal((err))
+		log.Fatal(err)
 	}
 }
