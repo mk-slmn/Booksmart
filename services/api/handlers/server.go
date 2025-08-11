@@ -16,6 +16,7 @@ func NewServer(db *sql.DB) http.Handler {
 	app := &App{DB: db}
 
 	r := chi.NewRouter()
+	r.Use(corsMW)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
