@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
@@ -11,7 +12,12 @@ import (
 func OpenDB() (*sql.DB, error) {
 	path := os.Getenv("SQLITE_PATH")
 	if path == "" {
-		path = "reading.sqlite"
+		path = filepath.Join(".", "data", "reading.sqlite")
+	}
+	if path != ":memory:" {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return nil, fmt.Errorf("make db dir: %w", err)
+		}
 	}
 
 	db, err := sql.Open("sqlite", path)
@@ -23,7 +29,6 @@ func OpenDB() (*sql.DB, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
-
 	return db, nil
 }
 
