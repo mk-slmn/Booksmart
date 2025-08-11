@@ -5,12 +5,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/mk-slmn/booksmart/services/api/handlers"
 )
 
 func TestHealth(t *testing.T) {
-	r := handlers.NewServer()
+	r := newTestServer(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/health", nil)
 	w := httptest.NewRecorder()
