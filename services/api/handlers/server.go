@@ -26,6 +26,7 @@ func NewServer(db *sql.DB) http.Handler {
 		v.Get("/version", app.version)
 		v.Post("/session/start", app.startSession)
 		v.Post("/session/stop", app.stopSession)
+		v.Post("/session/continue", app.continueSession)
 	})
 
 	return r
