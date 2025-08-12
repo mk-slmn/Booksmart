@@ -47,48 +47,28 @@ func (a *App) startSession(w http.ResponseWriter, r *http.Request) {
 	var out sessionResponse
 
 	err := withTx(a.DB, func(tx *sql.Tx) error {
-		var existing int64
-		err := tx.QueryRow(`
-			SELECT id FROM sessions
-			WHERE device_id = ? AND ended_at IS NULL
-			LIMIT 1
-		`, req.DeviceID).Scan(&existing)
-
-		if err == nil {
-			writeErr(w, http.StatusConflict, "an open session already exists for this device")
-			return errors.New("conflict")
-		} else if !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-
-		var bookID int64
-		err = tx.QueryRow(`SELECT id FROM books WHERE title = ?`, req.BookTitle).Scan(&bookID)
-		if errors.Is(err, sql.ErrNoRows) {
-			res, err := tx.Exec(`
-				INSERT INTO books (title, author, source, created_at)
-				VALUES (?, ?, ?, ?)
-			`, req.BookTitle, req.Author, req.Source, timeOrNowRFC3339(nil))
-			if err != nil {
-				return err
-			}
-			bookID, err = res.LastInsertId()
-			if err != nil {
-				return err
-			}
-		} else if err != nil {
-			return err
-		}
-
-		now := timeOrNowRFC3339(nil)
-		res, err := tx.Exec(`
-			INSERT INTO sessions (
-				book_id, device_id, start_page, started_at, created_at
-			) VALUES (?, ?, ?, ?, ?)
-		`, bookID, req.DeviceID, req.StartPage, startedAt, now)
+		existing, err := openSessionIDByDevice(tx, req.DeviceID)
 		if err != nil {
 			return err
 		}
-		id, err := res.LastInsertId()
+		if existing != 0 {
+			writeErr(w, http.StatusConflict, "an open session already exists for this device")
+			return errors.New("conflict")
+		}
+
+		bookID, err := findBookIDByTitle(tx, req.BookTitle)
+		if err != nil {
+			return err
+		}
+		if bookID == 0 {
+			bookID, err = insertBook(tx, req.BookTitle, req.Author, req.Source, timeOrNowRFC3339(nil))
+			if err != nil {
+				return err
+			}
+		}
+
+		now := timeOrNowRFC3339(nil)
+		id, err := insertSession(tx, bookID, req.DeviceID, req.StartPage, startedAt, now)
 		if err != nil {
 			return err
 		}

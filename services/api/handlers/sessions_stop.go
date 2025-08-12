@@ -37,19 +37,7 @@ func (a *App) stopSession(w http.ResponseWriter, r *http.Request) {
 	var out sessionResponse
 
 	err := withTx(a.DB, func(tx *sql.Tx) error {
-		var (
-			id        int64
-			bookID    int64
-			startPage int
-			startedAt string
-			createdAt string
-		)
-		err := tx.QueryRow(`
-			SELECT id, book_id, start_page, started_at, created_at
-			FROM sessions
-			WHERE device_id = ? AND ended_at IS NULL
-			LIMIT 1
-		`, req.DeviceID).Scan(&id, &bookID, &startPage, &startedAt, &createdAt)
+		id, bookID, startPage, startedAt, createdAt, err := openSessionByDevice(tx, req.DeviceID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				writeErr(w, http.StatusNotFound, "no open session for this device")
@@ -72,31 +60,16 @@ func (a *App) stopSession(w http.ResponseWriter, r *http.Request) {
 		}
 		sec := int64(dur / time.Second)
 
-		if req.EndPage != nil {
-			if *req.EndPage < 0 {
+		if err := closeSession(tx, id, endedAt, sec, req.EndPage); err != nil {
+			if err.Error() == "end_page must be >= 0" {
 				writeErr(w, http.StatusBadRequest, "end_page must be >= 0")
 				return errors.New("badend")
 			}
-			_, err = tx.Exec(`
-				UPDATE sessions
-				SET end_page = ?, ended_at = ?, duration_seconds = ?
-				WHERE id = ?
-			`, *req.EndPage, endedAt, sec, id)
-		} else {
-			_, err = tx.Exec(`
-				UPDATE sessions
-				SET ended_at = ?, duration_seconds = ?
-				WHERE id = ?
-			`, endedAt, sec, id)
-		}
-		if err != nil {
 			return err
 		}
 
-		var title string
-		var author, source *string
-		if err := tx.QueryRow(`SELECT title, author, source FROM books WHERE id = ?`, bookID).
-			Scan(&title, &author, &source); err != nil {
+		title, author, source, err := getBookInfo(tx, bookID)
+		if err != nil {
 			return err
 		}
 

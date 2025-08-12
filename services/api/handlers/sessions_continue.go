@@ -36,24 +36,10 @@ func (a *App) continueSession(w http.ResponseWriter, r *http.Request) {
 	var out sessionResponse
 
 	err := withTx(a.DB, func(tx *sql.Tx) error {
-		var (
-			openID      int64
-			openBookID  int64
-			openStart   int
-			openStarted string
-			openCreated string
-		)
-		err := tx.QueryRow(`
-			SELECT id, book_id, start_page, started_at, created_at
-			FROM sessions
-			WHERE device_id = ? AND ended_at IS NULL
-			LIMIT 1
-		`, req.DeviceID).Scan(&openID, &openBookID, &openStart, &openStarted, &openCreated)
-
+		openID, openBookID, openStart, openStarted, openCreated, err := openSessionByDevice(tx, req.DeviceID)
 		if err == nil {
-			var title string
-			var author, source *string
-			if err := tx.QueryRow(`SELECT title, author, source FROM books WHERE id = ?`, openBookID).Scan(&title, &author, &source); err != nil {
+			title, author, source, err := getBookInfo(tx, openBookID)
+			if err != nil {
 				return err
 			}
 			out = sessionResponse{
@@ -72,21 +58,9 @@ func (a *App) continueSession(w http.ResponseWriter, r *http.Request) {
 		} else if !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
-		var (
-			lastID        int64
-			lastBookID    int64
-			lastStartPage int
-			lastEndPage   *int
-			lastStartedAt string
-			lastCreatedAt string
-		)
-		err = tx.QueryRow(`
-			SELECT id, book_id, start_page, end_page, started_at, created_at
-			FROM sessions
-			WHERE device_id = ?
-			ORDER BY started_at DESC
-			LIMIT 1
-		`, req.DeviceID).Scan(&lastID, &lastBookID, &lastStartPage, &lastEndPage, &lastStartedAt, &lastCreatedAt)
+
+		_, lastBookID, lastStartPage, lastEndPage, _, _, err :=
+			mostRecentSessionByDevice(tx, req.DeviceID)
 		if errors.Is(err, sql.ErrNoRows) {
 			writeErr(w, http.StatusNotFound, "no prior session to continue")
 			return errors.New("notfound")
@@ -100,21 +74,13 @@ func (a *App) continueSession(w http.ResponseWriter, r *http.Request) {
 		}
 
 		now := timeOrNowRFC3339(nil)
-		res, err := tx.Exec(`
-			INSERT INTO sessions (book_id, device_id, start_page, started_at, created_at)
-			VALUES (?, ?, ?, ?, ?)
-		`, lastBookID, req.DeviceID, startPage, startedAt, now)
-		if err != nil {
-			return err
-		}
-		newID, err := res.LastInsertId()
+		newID, err := insertSession(tx, lastBookID, req.DeviceID, startPage, startedAt, now)
 		if err != nil {
 			return err
 		}
 
-		var title string
-		var author, source *string
-		if err := tx.QueryRow(`SELECT title, author, source FROM books WHERE id = ?`, lastBookID).Scan(&title, &author, &source); err != nil {
+		title, author, source, err := getBookInfo(tx, lastBookID)
+		if err != nil {
 			return err
 		}
 
