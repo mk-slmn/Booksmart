@@ -7,7 +7,7 @@ import (
 var corsMW = cors.Handler(cors.Options{
 	AllowedOrigins: []string{"*"}, // change for production
 
-	AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+	AllowedMethods: []string{"GET", "POST", "OPTIONS"},
 	AllowedHeaders: []string{
 		"Accept",
 		"Authorization",

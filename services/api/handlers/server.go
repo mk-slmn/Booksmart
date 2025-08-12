@@ -24,6 +24,7 @@ func NewServer(db *sql.DB) http.Handler {
 	r.Route("/v1", func(v chi.Router) {
 		v.Get("/health", app.health)
 		v.Get("/version", app.version)
+		v.Post("/session/start", app.startSession)
 	})
 
 	return r
