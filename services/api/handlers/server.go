@@ -29,6 +29,7 @@ func NewServer(db *sql.DB) http.Handler {
 		v.Post("/session/continue", app.continueSession)
 		v.Get("/books/recent", app.recentBooks)
 		v.Get("/stats/weekly", app.statsWeekly)
+		v.Get("/books", app.listBooks)
 	})
 
 	return r
