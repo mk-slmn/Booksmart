@@ -27,6 +27,7 @@ func NewServer(db *sql.DB) http.Handler {
 		v.Post("/session/start", app.startSession)
 		v.Post("/session/stop", app.stopSession)
 		v.Post("/session/continue", app.continueSession)
+		v.Get("/books/recent", app.recentBooks)
 	})
 
 	return r
