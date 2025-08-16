@@ -24,12 +24,19 @@ func NewServer(db *sql.DB) http.Handler {
 	r.Route("/v1", func(v chi.Router) {
 		v.Get("/health", app.health)
 		v.Get("/version", app.version)
+
 		v.Post("/session/start", app.startSession)
 		v.Post("/session/stop", app.stopSession)
 		v.Post("/session/continue", app.continueSession)
-		v.Get("/books/recent", app.recentBooks)
-		v.Get("/stats/weekly", app.statsWeekly)
+		v.Get("/sessions/open", app.openSession)
+
 		v.Get("/books", app.listBooks)
+		v.Get("/books/recent", app.recentBooks)
+
+		v.Get("/stats/weekly", app.statsWeekly)
+
+		v.Get("/sessions", app.listSessions)
+
 	})
 
 	return r

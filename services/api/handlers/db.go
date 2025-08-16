@@ -66,5 +66,8 @@ func ReadSchema() string {
 		ON sessions(book_id, started_at DESC);
 	
 	CREATE INDEX IF NOT EXISTS idx_sessions_date
-		ON sessions(started_at);`
+		ON sessions(started_at);
+	
+	CREATE INDEX IF NOT EXISTS idx_sessions_device_started
+		ON sessions(device_id, started_at DESC);`
 }
