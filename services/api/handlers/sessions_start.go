@@ -47,13 +47,26 @@ func (a *App) startSession(w http.ResponseWriter, r *http.Request) {
 	var out sessionResponse
 
 	err := withTx(a.DB, func(tx *sql.Tx) error {
-		existing, err := openSessionIDByDevice(tx, req.DeviceID)
-		if err != nil {
+		if openID, _, _, openStartedAt, _, err := openSessionByDevice(tx, req.DeviceID); err == nil {
+			stPrev, err := parseRFC3339UTC(openStartedAt)
+			if err != nil {
+				return err
+			}
+			stNew, err := parseRFC3339UTC(startedAt)
+			if err != nil {
+				return err
+			}
+			dur := stNew.Sub(stPrev)
+			if dur < 0 {
+				dur = 0
+			}
+			sec := int64(dur / time.Second)
+
+			if err := closeSession(tx, openID, startedAt, sec, nil); err != nil {
+				return err
+			}
+		} else if !errors.Is(err, sql.ErrNoRows) {
 			return err
-		}
-		if existing != 0 {
-			writeErr(w, http.StatusConflict, "an open session already exists for this device")
-			return errors.New("conflict")
 		}
 
 		bookID, err := findBookIDByTitle(tx, req.BookTitle)
@@ -88,9 +101,6 @@ func (a *App) startSession(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		if err.Error() == "conflict" {
-			return
-		}
 		writeErr(w, http.StatusInternalServerError, "internal error")
 		return
 	}
