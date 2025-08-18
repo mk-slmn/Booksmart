@@ -1,6 +1,6 @@
 # Booksmart Reading Tracker
 
-Booksmart is a simple backend service for tracking reading sessions in the Apple Books app across devices.  
+Booksmart is a backend service for tracking reading sessions in the Apple Books app across devices.  
 It lets you record when you start, stop, and continue reading, and provides endpoints to list books, sessions, and basic reading stats using iOS Shortcuts.
 
 ---
