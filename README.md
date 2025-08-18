@@ -90,7 +90,7 @@ curl -s http://localhost:8787/v1/stats/weekly?days=7 | jq
 
 - [ ] **Stats:** refine and add richer endpoints (e.g., per-book per-device, daily/weekly rollups)
 - [ ] **Resume endpoints:** consider adding `POST /v1/session/resume` (device+book) and `POST /v1/session/resume-global` (book-wide)
+- [ ] **Shortcuts integration:** complete iOS Shortcuts actions for triggering API endpoints
 - [ ] **Tests:** add more coverage for listing endpoints (`/sessions`, `/stats/weekly`)
-- [ ] **Docker:** add `Dockerfile` + `docker-compose.yml` for easy deploy
-- [ ] **CI:** GitHub Actions workflow for `go test -race -cover`
+- [ ] **Docker:** add `Dockerfile` and `docker-compose.yml` for easy deployment
 - [ ] **Frontend/Client:** simple web or mobile client to interact with the API
